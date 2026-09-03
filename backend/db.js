@@ -35,7 +35,7 @@ async function findUserByEmail(email) {
   const result = await pool.query(
     `SELECT id, email, name, mobile, password_hash AS "passwordHash"
      FROM users
-     WHERE lower(email) = lower($1)
+     WHERE email = $1
      LIMIT 1`,
     [normalizeEmail(email)],
   );

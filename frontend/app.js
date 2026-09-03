@@ -61,13 +61,14 @@ document
   .querySelector("#register-form")
   .addEventListener("submit", async (event) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
 
     try {
       const result = await sendRequest("/auth/register", payload);
       showStatus(result.message, "success");
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       showStatus(error.message, "error");
     }
@@ -77,7 +78,8 @@ document
   .querySelector("#login-form")
   .addEventListener("submit", async (event) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
 
     try {
@@ -86,7 +88,7 @@ document
       localStorage.setItem("authUser", JSON.stringify(result.user));
       showProfile(result.user, result.token);
       showStatus(`${result.message} Welcome, ${result.user.name}.`, "success");
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) {
       showStatus(error.message, "error");
     }

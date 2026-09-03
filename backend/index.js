@@ -24,9 +24,7 @@ app.post("/api/auth/register", async (request, response) => {
   const { email, name, mobile, password } = request.body;
 
   if (!email || !name || !mobile || !password) {
-    return response.status(400).json({
-      error: "Email, name, mobile, and password are required.",
-    });
+    return response.status(400).json({ error: "All fields are required." });
   }
 
   if (password.length < 8) {
@@ -37,11 +35,11 @@ app.post("/api/auth/register", async (request, response) => {
 
   try {
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await createUser({ email, name, mobile, passwordHash });
+    const newUser = await createUser({ email, name, mobile, passwordHash });
 
     return response.status(201).json({
       message: "User registered successfully.",
-      user,
+      user: newUser,
     });
   } catch (error) {
     if (error.code === "USER_EXISTS") {
@@ -59,18 +57,15 @@ app.post("/api/auth/login", async (request, response) => {
   const { email, password } = request.body;
 
   if (!email || !password) {
-    return response.status(400).json({
-      error: "Email and password are required.",
-    });
+    return response
+      .status(400)
+      .json({ error: "Email and password are required." });
   }
- const user  = conn.execute('SELECT * FROM users WHERE email = ?', [email]);
+
   try {
     const user = await findUserByEmail(email);
-    const passwordMatches = user
-      ? await bcrypt.compare(password, user.passwordHash)
-      : false;
 
-    if (!passwordMatches) {
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return response.status(401).json({ error: "Invalid email or password." });
     }
 
@@ -81,17 +76,23 @@ app.post("/api/auth/login", async (request, response) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      { id: user.id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
     await updateUserToken(user.id, token);
 
-    const { passwordHash, ...safeUser } = user;
+    const userDetails = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+    };
+
     return response.json({
       message: "Login successful.",
       token,
-      user: safeUser,
+      user: userDetails,
     });
   } catch (error) {
     console.error(error);
